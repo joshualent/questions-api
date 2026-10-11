@@ -18,12 +18,16 @@ class QuestionViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     @action(detail=True, methods=["post"], permission_classes=[IsAuthenticated])
-    def upvote(self, request, pk=None, format=None):
+    def toggle_vote(self, request, pk=None, format=None):
         question = self.get_object()
-        question.votes += 1
-        question.save()
-        return Response(self.get_serializer(question).data)
+        has_voted = question.votes.filter(pk=request.user.pk).exists()
 
+        if has_voted:
+            question.votes.remove(request.user)
+        else:
+            question.votes.add(request.user)
+
+        return Response(self.get_serializer(question).data)
 
     @action(detail=True, methods=["post"], permission_classes=[IsAdminUser])
     def toggle_answered(self, request, pk=None, format=None):
